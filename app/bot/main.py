@@ -33,5 +33,10 @@ async def main(container: Container):
 if __name__ == "__main__":
     container = Container()
     loguru.logger.info('Bot is starting')
-    container.wire(modules=[handlers.start, handlers.resume, handlers.state])
+    container.wire(modules=[
+        handlers.start,
+        handlers.resume,
+        handlers.state,
+        handlers.match
+    ])
     asyncio.run(main(container=container))

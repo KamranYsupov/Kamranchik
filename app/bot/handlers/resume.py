@@ -34,15 +34,16 @@ async def watch_resumes_callback_handler(
 
     user_to_watch = await telegram_users_service.aggregate(pipeline, one=True)
     if user_to_watch is None:
-        await callback.message.delete()
         return await callback.message.answer('Вы посмотрели все анкеты')
+
+    user_to_watch_telegram_id = user_to_watch['telegram_id']
 
     resume_message_info = telegram_users_service.get_resume_message_info(
         user_to_watch['resume']
     )
 
     watched_resumes = telegram_user_schema.watched_resumes.copy()
-    watched_resumes.append(user_to_watch['telegram_id'])
+    watched_resumes.append(user_to_watch_telegram_id)
     unique_watched_resumes = list(set(watched_resumes))
 
     await telegram_users_service.update(
@@ -51,12 +52,12 @@ async def watch_resumes_callback_handler(
     )
 
     await callback.message.answer_photo(
-        photo=telegram_user_schema.resume.photo,
+        photo=user_to_watch['resume']['photo'],
         caption=resume_message_info,
         parse_mode='HTML',
         reply_markup=get_inline_keyboard(
             buttons={
-                'Отправить заявку 💘': f'💘_{telegram_user_schema.telegram_id}',
+                'Отправить заявку 💘': f'💘_{user_to_watch_telegram_id}',
                 'Следующий ▶': 'watch_resumes',
             }
         ),
@@ -75,7 +76,9 @@ async def create_update_resume_callback_handler(
         message_action = 'изменим'
 
     await callback.message.answer(
-        f'Давай {message_action} твою анкету. Как тебя зовут?)'
+        f'Давай {message_action} тебе анкету. Как тебя зовут?)'
+        '\n<em>Отправь "." для отмены</em>',
+        parse_mode='HTML'
     )
     await state.set_state(ResumeState.name)
 
@@ -117,6 +120,32 @@ async def my_resume_callback_handler(
             buttons={
                 'Изменить 📝': 'update_resume',
                 'Удалить 🗑': 'delete_resume',
+            }
+        ),
+    )
+
+
+@resume_router.callback_query(F.data.startswith('resume_'))
+@inject
+async def my_resume_callback_handler(
+        callback: types.CallbackQuery,
+        telegram_users_service: TelegramUsersService = Provide[
+            Container.telegram_users_service
+        ],
+):
+    telegram_id = int(callback.data.split('_')[-1])
+    telegram_user = await telegram_users_service.get(telegram_id=telegram_id)
+    resume_message_info = telegram_users_service.get_resume_message_info(
+        telegram_user['resume']
+    )
+
+    await callback.message.answer_photo(
+        photo=telegram_user['resume']['photo'],
+        caption=resume_message_info,
+        parse_mode='HTML',
+        reply_markup=get_inline_keyboard(
+            buttons={
+                'Принять заявку 💞': f'💞_{telegram_id}',
             }
         ),
     )

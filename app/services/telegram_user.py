@@ -1,3 +1,4 @@
+import loguru
 from aiogram import types
 
 from repositories.telegram_user import RepositoryTelegramUsers
@@ -12,8 +13,8 @@ class TelegramUsersService:
     async def get(self, **kwargs):
         return await self._repository_telegram_users.get(**kwargs)
 
-    async def aggregate(self, pipline, one: bool = False):
-        result = await self._repository_telegram_users.aggregate(pipline)
+    async def aggregate(self, pipeline, one: bool = False):
+        result = await self._repository_telegram_users.aggregate(pipeline)
         if not one:
             return result
 
@@ -36,11 +37,12 @@ class TelegramUsersService:
 
     @staticmethod
     def get_from_user_formated_data(
-            from_user: types.Message.from_user
+            from_user  # message.from_user
     ) -> TelegramUserSchema:
         telegram_user_data = from_user.model_dump()
         telegram_id = telegram_user_data.pop('id')
         telegram_user_data['telegram_id'] = telegram_id
+        telegram_user_data['watched_resumes'] = [telegram_id]
         telegram_user_schema = TelegramUserSchema(**telegram_user_data)
 
         return telegram_user_schema

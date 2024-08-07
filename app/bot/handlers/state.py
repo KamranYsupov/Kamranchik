@@ -1,3 +1,4 @@
+import loguru
 from aiogram import types, F, Router
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
@@ -26,6 +27,8 @@ async def cancel_handler(
         message: types.Message,
         state: FSMContext,
 ):
+    if not await state.get_data():
+        return
     await message.answer(
         'Действие отменено',
         reply_keyboard=reply_keyboard_remove
@@ -44,7 +47,8 @@ async def process_name(message: types.Message, state: FSMContext):
 
     await message.answer(
         'Сколько тебе лет?'
-        '\n\n <em>Отправь "." для отмены</em>'
+        '\n<em>Отправь "." для отмены</em>',
+        parse_mode='HTML'
     )
 
 
@@ -57,12 +61,13 @@ async def process_old(message: types.Message, state: FSMContext):
         await state.update_data(old=old)
         await state.set_state(ResumeState.photo)
     except ValueError:
-        await message.answer('Пожалуйста, введите корректный возраст')
+        await message.answer('Пожалуйста, введи корректный возраст')
         return
 
     await message.answer(
         'Отправь свою фотографию'
-        '\n\n <em>Отправь "." для отмены</em>'
+        '\n<em>Отправь "." для отмены</em>',
+        parse_mode='HTML'
     )
 
 
@@ -73,7 +78,8 @@ async def process_photo(message: types.Message, state: FSMContext):
 
     await message.answer(
         'Расскажите немного о себе'
-        '\n\n <em>Отправь "." для отмены</em>')
+        '\n<em>Отправь "." для отмены</em>',
+        parse_mode='HTML')
 
 
 @state_router.message(ResumeState.about, F.text)
@@ -111,7 +117,7 @@ async def process_about(
         photo=resume_schema.photo,
         caption=profile_message_info,
         parse_mode='HTML',
-        reply_keyboard=get_inline_keyboard(
+        reply_markup=get_inline_keyboard(
             buttons={
                 'Просмотр анкет': 'watch_resumes',
                 'Изменить 📝': 'update_resume',

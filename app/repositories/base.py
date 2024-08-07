@@ -32,10 +32,17 @@ class RepositoryBase:
         result = await self._async_or_sync_call_query(query, kwargs)
         return result
 
-    async def aggregate(self, pipline) -> list:
-        query = self._collection.aggregate
-        result = list(await self._async_or_sync_call_query(query, pipline))
-        return result
+    async def aggregate(self, pipeline) -> list:
+        cursor = self._collection.aggregate(pipeline)
+
+        if self.sync:
+            return list(cursor)
+
+        documents = []
+        async for document in cursor:
+            documents.append(document)
+
+        return documents
 
     def list(
             self,
