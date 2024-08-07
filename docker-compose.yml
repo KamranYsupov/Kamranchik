@@ -1,0 +1,34 @@
+services:
+
+  bot:
+    container_name: ${PROJECT_NAME}_bot
+    build:
+      context: .
+      dockerfile: bot.dockerfile
+    volumes:
+      - ./app:/app:rw
+      - poetry-volume:/opt/poetry:delegated
+    environment: &env-vars
+      POETRY_HOME: /opt/poetry
+    env_file:
+      - .env
+    depends_on:
+      - mongodb
+
+  mongodb:
+    env_file:
+      - .env
+    image: mongo:latest
+    container_name: ${PROJECT_NAME}_mongo
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+
+
+volumes:
+  poetry-volume:
+  mongo_data:
