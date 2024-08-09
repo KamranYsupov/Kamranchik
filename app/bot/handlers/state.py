@@ -1,6 +1,6 @@
 import loguru
 from aiogram import types, F, Router
-from aiogram.filters import StateFilter
+from aiogram.filters import StateFilter, Command, or_f
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from pydantic import ValidationError
@@ -22,13 +22,14 @@ class ResumeState(StatesGroup):
     photo = State()
 
 
-@state_router.message(StateFilter('*'), F.text.lower() == '.')
+@state_router.message(
+    StateFilter('*'),
+    or_f(Command('cancel'), (F.text.lower() == '.'))
+)
 async def cancel_handler(
         message: types.Message,
         state: FSMContext,
 ):
-    if not await state.get_data():
-        return
     await message.answer(
         'Действие отменено',
         reply_keyboard=reply_keyboard_remove

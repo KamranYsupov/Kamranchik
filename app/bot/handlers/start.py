@@ -43,7 +43,7 @@ async def start_command_handler(
         buttons.update({'Создать анкету': 'create_resume'})
     else:
         if telegram_user.get('resume'):
-            buttons.update({'Моя анкета': 'my_resume'})
+            buttons.update({'Моя анкета': 'my_resume_answer'})
         else:
             buttons.update({'Создать анкету': 'create_resume'})
 

@@ -32,8 +32,17 @@ class TelegramUsersService:
             obj_in=obj_in,
         )
 
-    async def list(self, **kwargs):
-        return self._repository_telegram_users.list(**kwargs)
+    async def list(
+            self,
+            skip: int = None,
+            limit: int = None,
+            **kwargs
+    ):
+        return await self._repository_telegram_users.list(
+            skip=skip,
+            limit=limit,
+            **kwargs
+        )
 
     @staticmethod
     def get_from_user_formated_data(
@@ -58,6 +67,3 @@ class TelegramUsersService:
         )
 
         return resume_message_info
-
-
-    

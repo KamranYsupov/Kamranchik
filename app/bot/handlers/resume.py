@@ -1,3 +1,4 @@
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import or_f
 from aiogram.fsm.context import FSMContext
 from aiogram import Router, types, F
@@ -14,7 +15,7 @@ from schemas.telegram_user import TelegramUserSchema
 resume_router = Router()
 
 
-@resume_router.callback_query(F.data.startswith('watch_resumes'))
+@resume_router.callback_query(F.data == 'watch_resumes')
 @inject
 async def watch_resumes_callback_handler(
         callback: types.CallbackQuery,
@@ -57,7 +58,7 @@ async def watch_resumes_callback_handler(
         parse_mode='HTML',
         reply_markup=get_inline_keyboard(
             buttons={
-                'Отправить заявку 💘': f'💘_{user_to_watch_telegram_id}',
+                'Отправить заявку 💘': f'like_{user_to_watch_telegram_id}',
                 'Следующий ▶': 'watch_resumes',
             }
         ),
@@ -69,17 +70,28 @@ async def create_update_resume_callback_handler(
         callback: types.CallbackQuery,
         state: FSMContext,
 ):
-    action = callback.data.split('_')[0]
-    if action == 'create':
-        message_action = 'создадим'
+    action_type = callback.data.split('_')[0]
+    if action_type == 'create':
+        action_message = 'создадим'
     else:
-        message_action = 'изменим'
+        action_message = 'изменим'
 
-    await callback.message.answer(
-        f'Давай {message_action} тебе анкету. Как тебя зовут?)'
-        '\n<em>Отправь "." для отмены</em>',
-        parse_mode='HTML'
-    )
+    try:
+        await callback.message.edit_caption(
+            caption=f'Давай {action_message} тебе анкету. Как тебя зовут?)'
+                    '\n<em>Отправь "." для отмены</em>',
+            reply_markup=get_inline_keyboard(
+                buttons={'Назад 🔙': 'my_resume_edit'}
+            ),
+            parse_mode='HTML'
+        )
+    except TelegramBadRequest:
+        await callback.message.edit_text(
+            f'Давай {action_message} тебе анкету. Как тебя зовут?)'
+            '\n<em>Отправь "." для отмены</em>',
+            parse_mode='HTML'
+        )
+
     await state.set_state(ResumeState.name)
 
 
@@ -99,7 +111,7 @@ async def delete_resume_callback_handler(
     await callback.message.answer('Твоя анкета удалена')
 
 
-@resume_router.callback_query(F.data == 'my_resume')
+@resume_router.callback_query(F.data.startswith('my_resume_'))
 @inject
 async def my_resume_callback_handler(
         callback: types.CallbackQuery,
@@ -112,12 +124,17 @@ async def my_resume_callback_handler(
         telegram_user['resume']
     )
 
-    await callback.message.answer_photo(
+    action_type = callback.data.split('_')[-1]
+    bot_action = callback.message.answer_photo \
+        if action_type == 'answer' else callback.message.edit_caption
+
+    await bot_action(
         photo=telegram_user['resume']['photo'],
         caption=f'<b>Твоя анкета</b>:\n\n' + resume_message_info,
         parse_mode='HTML',
         reply_markup=get_inline_keyboard(
             buttons={
+                'Просмотр анкет': 'watch_resumes',
                 'Изменить 📝': 'update_resume',
                 'Удалить 🗑': 'delete_resume',
             }
@@ -127,7 +144,7 @@ async def my_resume_callback_handler(
 
 @resume_router.callback_query(F.data.startswith('resume_'))
 @inject
-async def my_resume_callback_handler(
+async def resume_callback_handler(
         callback: types.CallbackQuery,
         telegram_users_service: TelegramUsersService = Provide[
             Container.telegram_users_service
@@ -139,13 +156,12 @@ async def my_resume_callback_handler(
         telegram_user['resume']
     )
 
-    await callback.message.answer_photo(
-        photo=telegram_user['resume']['photo'],
+    await callback.message.edit_caption(
         caption=resume_message_info,
         parse_mode='HTML',
         reply_markup=get_inline_keyboard(
             buttons={
-                'Принять заявку 💞': f'💞_{telegram_id}',
+                'Принять заявку 💞': f'like_{telegram_id}',
             }
         ),
     )

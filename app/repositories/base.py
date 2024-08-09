@@ -9,6 +9,7 @@ from motor.motor_asyncio import AsyncIOMotorCollection
 
 class RepositoryBase:
     """Репозиторий с базовым CRUD"""
+
     def __init__(
             self,
             collection: Collection | AsyncIOMotorCollection
@@ -38,29 +39,26 @@ class RepositoryBase:
         if self.sync:
             return list(cursor)
 
-        documents = []
-        async for document in cursor:
-            documents.append(document)
+        result = [document async for document in cursor]
 
-        return documents
+        return result
 
-    def list(
+    async def list(
             self,
-            optional_query: dict | None = None,
             skip: int = None,
             limit: int = None,
             **kwargs
     ) -> list[dict]:
 
-        query = kwargs
-
-        if optional_query:
-            query = optional_query
-
         if skip and limit:
-            result = [document for document in self._collection.find(query).skip(skip).limit(limit)]
+            cursor = self._collection.find(kwargs).skip(skip).limit(limit)
         else:
-            result = [document for document in self._collection.find(query)]
+            cursor = self._collection.find(kwargs)
+
+        if self.sync:
+            result = [document for document in cursor]
+        else:
+            result = [document async for document in cursor]
 
         return result
 

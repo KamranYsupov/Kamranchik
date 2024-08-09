@@ -26,7 +26,6 @@ async def main(container: Container):
         await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
     finally:
         await bot.session.close()
-        mongo_manager.drop_database()
         mongo_manager.db_client.close()
 
 
@@ -37,6 +36,6 @@ if __name__ == "__main__":
         handlers.start,
         handlers.resume,
         handlers.state,
-        handlers.match
+        handlers.like,
     ])
     asyncio.run(main(container=container))
