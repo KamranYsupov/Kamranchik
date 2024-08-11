@@ -134,10 +134,10 @@ async def my_resume_callback_handler(
         parse_mode='HTML',
         reply_markup=get_inline_keyboard(
             buttons={
-                'Просмотр анкет': 'watch_resumes',
                 'Изменить 📝': 'update_resume',
                 'Удалить 🗑': 'delete_resume',
-            }
+            },
+            sizes=(2, 1),
         ),
     )
 

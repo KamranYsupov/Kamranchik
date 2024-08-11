@@ -3,10 +3,10 @@ import math
 
 class Paginator:
     def __init__(
-        self,
-        array: list | tuple,
-        page_number: int = 1,
-        per_page: int = 1,
+            self,
+            array: list | tuple,
+            page_number: int = 1,
+            per_page: int = 1,
     ):
         self.array = array
         self.page_number = page_number
@@ -23,3 +23,13 @@ class Paginator:
 
     def has_previous(self):
         return self.page_number > 1
+
+
+def get_pagination_buttons(paginator: Paginator):
+    pagination_buttons = dict()
+    if paginator.has_previous():
+        pagination_buttons['◀ Пред.'] = 'previous'
+    if paginator.has_next():
+        pagination_buttons['След. ▶'] = 'next'
+
+    return pagination_buttons
